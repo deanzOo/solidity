@@ -42,33 +42,29 @@ contract Project {
     function endpoint() public
     competitionNotExpired competitorSubmittedEnough(msg.sender){
         init_competitor(msg.sender);
-        uint func_num = chooseRandomFunction(msg.data);
-        if (func_num == 1)
-            random_first(msg.sender);
-        else if (func_num == 2)
-            random_second(msg.sender);
-        else random_third(msg.sender);
+        Submissions[msg.sender] += 1;
+        Score[msg.sender] += random_gas_use(msg.data);
+    }
+
+    // get scores
+    function getScores() public pure returns (uint [], uint []) {
+        uint [] formatted_scores;
+        for (uint i = 0; i < competitors.length; i++)
+            formatted_scores.push(Scores[competitors[i]]);
+        return competitors, formatted_scores;
     }
 
     /*******************************************************************************
         functions that were chosen randomly'ish to decide scores for competitors
     *********************************************************************************/
-    function random_first(address _competitor) private pure
+    function random_gas_use(uint _limit_base) private pure returns (uint)
     {
-        Score[_competitor] += 50;
-        Submissions[_competitor] += 1;
-    }
-
-    function random_second(address _competitor) private pure
-    {
-        Score[_competitor] += 100;
-        Submissions[_competitor] += 1;
-    }
-
-    function random_third(address _competitor) private pure
-    {
-        Score[_competitor] += 200;
-        Submissions[_competitor] += 1;
+        uint limit = chooseRandomLimit(_limit_base);
+        uint old_gas_used = gasleft();
+        for (uint i = 0; i < limit; i++) {
+            uint j = (i % 3) * ((limit * i) % 3);
+        }
+        return gas_used = gas_left() - old_gas_used;
     }
 
     /*******************************************************************************
@@ -76,7 +72,7 @@ contract Project {
     *********************************************************************************/
     // simple way of checking if competitor already submitted or not
     function is_competitor(address _sender) private pure returns (bool) {
-        for (i = 0; i < competitors.length; i++)
+        for (uint i = 0; i < competitors.length; i++)
             if (competitors[i] == _sender)
                 return true;
         return false;
@@ -93,7 +89,7 @@ contract Project {
 
     // some random way of choosing a scoring for the competitor
     // in real world situations, this will not be chosen randomly, but by specific answers and success
-    function chooseRandomFunction(uint _bet) private pure returns (uint){
+    function chooseRandomLimit(uint _bet) private pure returns (uint){
         return (uint(keccak256(block.difficulty, _bet) * keccak256(now)) % 3) + 1;
     }
 
