@@ -22,7 +22,7 @@ contract Project {
         expiration = start + msg.duration * 1 days;
     }
 
-    // prevents accessing contract af
+    // prevents accessing contract after expiration date
     modifier competitionNotExpired() {
         require(
             now <= expiration
@@ -47,24 +47,23 @@ contract Project {
     }
 
     // get scores
-    function getScores() public pure returns (uint [], uint []) {
+    function getScores() public pure returns (uint32 [], uint32 []) {
         uint [] formatted_scores;
         for (uint i = 0; i < competitors.length; i++)
-            formatted_scores.push(Scores[competitors[i]]);
-        return competitors, formatted_scores;
+            formatted_scores.push(uint32(Scores[competitors[i]]));
+        return (competitors, formatted_scores);
     }
 
-    /*******************************************************************************
-        functions that were chosen randomly'ish to decide scores for competitors
-    *********************************************************************************/
+    // use gas randomly based on _limit_base
     function random_gas_use(uint _limit_base) private pure returns (uint)
     {
         uint limit = chooseRandomLimit(_limit_base);
+        uint base = now;
         uint old_gas_used = gasleft();
         for (uint i = 0; i < limit; i++) {
-            uint j = (i % 3) * ((limit * i) % 3);
+            uint j = (i % base) * ((limit * i) % base);
         }
-        return gas_used = gas_left() - old_gas_used;
+        return gasleft() - old_gas_used;
     }
 
     /*******************************************************************************
@@ -90,7 +89,7 @@ contract Project {
     // some random way of choosing a scoring for the competitor
     // in real world situations, this will not be chosen randomly, but by specific answers and success
     function chooseRandomLimit(uint _bet) private pure returns (uint){
-        return (uint(keccak256(block.difficulty, _bet) * keccak256(now)) % 3) + 1;
+        return uint(keccak256(block.difficulty, _bet) * keccak256(now));
     }
 
 }
