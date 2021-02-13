@@ -14,18 +14,18 @@ contract Project {
     uint start;
     uint expiration;
     address [] competitors;
-    mapping (address => uint)Score;
+    mapping (address => uint)Scores;
     mapping (address =>uint)Submissions;
 
-    constructor()public payable {
-        start = now;
-        expiration = start + msg.duration * 1 days;
+    constructor(uint _daysActive) payable {
+        start = block.timestamp;
+        expiration = start + _daysActive * 1 days;
     }
 
     // prevents accessing contract after expiration date
     modifier competitionNotExpired() {
         require(
-            now <= expiration
+            block.timestamp <= expiration
         );
         _;
     }
@@ -39,26 +39,26 @@ contract Project {
     }
 
     // public endpoint for all competitors to submit their bets
-    function endpoint() public
+    function endpoint(bytes calldata _answer) public
     competitionNotExpired competitorSubmittedEnough(msg.sender){
         init_competitor(msg.sender);
         Submissions[msg.sender] += 1;
-        Score[msg.sender] += random_gas_use(msg.data);
+        Scores[msg.sender] += random_gas_use(_answer);
     }
 
     // get scores
-    function getScores() public pure returns (uint32 [], uint32 []) {
-        uint [] formatted_scores;
+    function getScores() public pure returns (uint32 [] calldata, uint32 [] calldata) {
+        uint [] storage formatted_scores;
         for (uint i = 0; i < competitors.length; i++)
             formatted_scores.push(uint32(Scores[competitors[i]]));
         return (competitors, formatted_scores);
     }
 
     // use gas randomly based on _limit_base
-    function random_gas_use(uint _limit_base) private pure returns (uint)
+    function random_gas_use(bytes calldata _limit_base) private pure returns (uint)
     {
-        uint limit = chooseRandomLimit(_limit_base);
-        uint base = now;
+        uint limit = chooseRandomLimit(uint(_limit_base));
+        uint base = block.timestamp;
         uint old_gas_used = gasleft();
         for (uint i = 0; i < limit; i++) {
             uint j = (i % base) * ((limit * i) % base);
@@ -81,7 +81,7 @@ contract Project {
     function init_competitor(address _sender) private {
         if (!is_competitor( _sender)) {
             competitors.push( _sender);
-            Score[ _sender] = 0;
+            Scores[ _sender] = 0;
             Submissions[ _sender] = 1;
         }
     }
@@ -89,7 +89,7 @@ contract Project {
     // some random way of choosing a scoring for the competitor
     // in real world situations, this will not be chosen randomly, but by specific answers and success
     function chooseRandomLimit(uint _bet) private pure returns (uint){
-        return uint(keccak256(block.difficulty, _bet) * keccak256(now));
+        return uint(uint(keccak256(block.difficulty, _bet)) * uint(keccak256(block.timestamp)));
     }
 
 }

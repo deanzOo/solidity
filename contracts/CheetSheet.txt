@@ -268,19 +268,19 @@ used above function declarations
                Example
 ******************************************* */
 // SPDX-License-Identifier: MIT
-pragma solidity ^0.7.4;
-
-contract Inheritance {
-    address owner;
-    bool deceased;
-    uint money;
-
-    constructor()public payable {
-        owner = msg.sender;
-        money = msg.value;
-        deceased = false;
-    }
-
-    address [] wallets;
-    mapping (address => uint)Inheritence;
-}
+//pragma solidity ^0.7.4;
+//
+//contract Inheritance {
+//    address owner;
+//    bool deceased;
+//    uint money;
+//
+//    constructor()public payable {
+//        owner = msg.sender;
+//        money = msg.value;
+//        deceased = false;
+//    }
+//
+//    address [] wallets;
+//    mapping (address => uint)Inheritence;
+//}
