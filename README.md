@@ -1,11 +1,14 @@
 # Install
-'cd dapp'
-'npm install'
-'npm install truffle -g'
+* 'cd dapp'
+* 'npm install'
+* 'npm install truffle -g'
 # Run
-'run Ganache'
+run Ganache
+
 in cmd:
-'cd solidity'
-'truffle console'
-'migrate'
-'open project.html'
+
+* 'cd solidity'
+* 'truffle console'
+* 'migrate'
+
+open project.html
