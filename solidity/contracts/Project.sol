@@ -13,55 +13,56 @@ contract Project {
 
     uint start;
     uint expiration;
-    address [] competitors;
+    address payable [] competitors;
     mapping (address => uint)Scores;
-    mapping (address =>uint)Submissions;
+    mapping (address => uint)Submissions;
+    uint [] formatted_scores;
+
+    uint _LIM = 50;
 
     constructor(uint _daysActive) payable {
         start = block.timestamp;
         expiration = start + _daysActive * 1 days;
     }
 
-    // prevents accessing contract after expiration date
-    modifier competitionNotExpired() {
-        require(
-            block.timestamp <= expiration
-        );
-        _;
-    }
-
     // prevents competitors to submit more the 3 times
     modifier competitorSubmittedEnough(address _competitor) {
         require(
-            !is_competitor(_competitor) || Submissions[_competitor] <= 3
+            !is_competitor(_competitor) || Submissions[_competitor] <= 3 || this.expired()
         );
         _;
     }
 
     // public endpoint for all competitors to submit their bets
-    function endpoint(bytes calldata _answer) public
-    competitionNotExpired competitorSubmittedEnough(msg.sender){
+    function endpoint(uint _answer) public
+    competitorSubmittedEnough(msg.sender){
+        if (this.expired()) {
+            uint max_index = 0;
+            for (uint i = 0; i < competitors.length; i++)
+                if (Scores[competitors[i]] > max_index)
+                    max_index = i;
+            selfdestruct(competitors[max_index]);
+        }
         init_competitor(msg.sender);
         Submissions[msg.sender] += 1;
-        Scores[msg.sender] += random_gas_use(_answer);
+        Scores[msg.sender] = random_gas_use(_answer);
     }
 
-    // get scores
-    function getScores() public pure returns (uint32 [] calldata, uint32 [] calldata) {
-        uint [] storage formatted_scores;
-        for (uint i = 0; i < competitors.length; i++)
-            formatted_scores.push(uint32(Scores[competitors[i]]));
-        return (competitors, formatted_scores);
+    function expired() public view returns (bool) {
+        return block.timestamp > expiration;
+    }
+
+    function expire() public {
+        expiration = 0;
     }
 
     // use gas randomly based on _limit_base
-    function random_gas_use(bytes calldata _limit_base) private pure returns (uint)
+    function random_gas_use(uint _limit_base) private view returns (uint)
     {
-        uint limit = chooseRandomLimit(uint(_limit_base));
-        uint base = block.timestamp;
+        uint limit = chooseRandomLimit(_limit_base);
         uint old_gas_used = gasleft();
         for (uint i = 0; i < limit; i++) {
-            uint j = (i % base) * ((limit * i) % base);
+            mulmod(block.difficulty, block.timestamp, limit);
         }
         return gasleft() - old_gas_used;
     }
@@ -70,7 +71,7 @@ contract Project {
                                    Helper Functions
     *********************************************************************************/
     // simple way of checking if competitor already submitted or not
-    function is_competitor(address _sender) private pure returns (bool) {
+    function is_competitor(address _sender) private view returns (bool) {
         for (uint i = 0; i < competitors.length; i++)
             if (competitors[i] == _sender)
                 return true;
@@ -78,18 +79,16 @@ contract Project {
     }
 
     // if it's first submission for the competitor, lets enter him into the data base
-    function init_competitor(address _sender) private {
-        if (!is_competitor( _sender)) {
-            competitors.push( _sender);
-            Scores[ _sender] = 0;
-            Submissions[ _sender] = 1;
+    function init_competitor(address payable _sender) private {
+        if (!is_competitor(_sender)) {
+            competitors.push(_sender);
         }
     }
 
     // some random way of choosing a scoring for the competitor
     // in real world situations, this will not be chosen randomly, but by specific answers and success
-    function chooseRandomLimit(uint _bet) private pure returns (uint){
-        return uint(uint(keccak256(block.difficulty, _bet)) * uint(keccak256(block.timestamp)));
+    function chooseRandomLimit(uint _bet) private view returns (uint){
+        return addmod(_bet * block.timestamp, block.number * block.difficulty, _LIM);
     }
 
 }
