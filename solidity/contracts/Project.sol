@@ -4,37 +4,17 @@ pragma solidity ^0.7.4;
 contract Project {
     uint start;
     uint expiration;
-    address [] competitors;
-    uint256 [] Scores;
-    uint [] Submissions;
+    uint public n_competitors;
+    address [] public competitors;
+    uint256 [] public Scores;
+    uint [] public Submissions;
 
     uint _LIM = 17;
 
     constructor(uint _daysActive) {
         start = block.timestamp;
         expiration = start + _daysActive * 1 days;
-    }
-
-    function getCompetitors() public view returns (address [] memory) {
-        int l = int(competitors.length);
-        address [l] memory comp_copy;
-        for (uint i = 0; i < competitors.length; i++)
-            comp_copy[i] = competitors[i];
-        return comp_copy;
-    }
-    function getScores() public view returns (uint256 [] memory) {
-        int l = int(Scores.length);
-        uint256 [l] memory scores_copy;
-        for (uint i = 0; i < Scores.length; i++)
-            scores_copy[i] = Scores[i];
-        return scores_copy;
-    }
-    function getSubmissions() public view returns (uint [] memory) {
-        int l = int(Submissions.length);
-        uint [l] memory submissions_copy;
-        for (uint i = 0; i < Submissions.length; i++)
-            submissions_copy[i] = Submissions[i];
-        return submissions_copy;
+        n_competitors = 0;
     }
 
     // public endpoint for all competitors to submit their bets
@@ -99,6 +79,7 @@ contract Project {
             Scores.push(0);
             Submissions.push(0);
             competitors.push(_sender);
+            n_competitors = competitors.length;
             return uint(competitors.length - 1);
         }
 
