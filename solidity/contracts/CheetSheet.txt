@@ -284,3 +284,7 @@ used above function declarations
 //    address [] wallets;
 //    mapping (address => uint)Inheritence;
 //}
+
+/*
+Project.deployed().then(function(instance){return instance.is_competitor.call("0xa0B0550d7DCc32C273fb244e01Faff58AdeEef9F");}).then(function(value){return value.toNumber()});
+*/
