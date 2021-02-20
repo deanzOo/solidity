@@ -1,3 +1,4 @@
+"strict mode"
 var web3 = new Web3('ws://localhost:7545');
 
 const contract_abi = [
@@ -186,11 +187,12 @@ const contract_abi = [
         "type": "function"
     }
 ];
-const contract_address ='0x25fcdAc610153D72983C3396d0B6A99D13dFb09F';
+const contract_address ='0x78Ff4b8738FF6AFAe8cBf4c5DCcB7C921041C443';
 let accounts = web3.eth.getAccounts();
-let contract = new web3.eth.Contract(contract_abi, contract_address);
+let contract;
 
-async function fillDetails(contract) {
+async function fillDetails() {
+    contract = new web3.eth.Contract(contract_abi, contract_address);
     let n = await contract.methods.n_competitors().call();
     let competitors = [];
     let scores = [];
@@ -200,11 +202,23 @@ async function fillDetails(contract) {
         scores.push(await contract.methods.Scores(i).call());
         submissions.push(await contract.methods.Submissions(i).call());
     }
-    return {
-        'competitors': competitors,
-        'scores': scores.map(function(score) {return parseInt(score);}),
-        'submissions': submissions.map(function(submission) {return parseInt(submission);})
-    }
+    data = competitors.map((competitor, index) => {
+        return {
+            'competitor': competitor,
+            'score': parseInt(scores[index], 16),
+            'submissions': parseInt(submissions[index])
+        };
+    });
+
+    var table = document.getElementById("table");
+    // console.log('data', data)
+    data.forEach((row, index) => {
+        var tableRow = table.insertRow(index+1);
+        tableRow.insertCell(0).innerHTML = row.competitor;
+        tableRow.insertCell(1).innerHTML = row.score;
+        tableRow.insertCell(2).innerHTML = row.submissions;
+        tableRow.insertCell(3).innerHTML = `<button onclick='bet(` + JSON.stringify(row).competitor + `)'>bet</button>`;
+    });
 }
 
 async function expire(contract) {
@@ -223,10 +237,17 @@ async function getWinner(contract) {
     return winner;
 }
 
-async function bet(contract, _bet) {
-    await contract.methods.bet(_bet).call().then(function (instance) {console.log(instance);});
+function bet(competitor) {
+    contract = new web3.eth.Contract(contract_abi, contract_address);
+    contract.options.from = competitor;
+    var _bet = prompt('enter number');
+    contract.methods.bet(_bet).send()
 }
 
-web3.eth.defaultAccount = accounts[7];
-console.log(bet(contract, 500));
-fillDetails(contract).then(function (value) {console.log(value);});
+function newBet() {
+    var competitor = document.getElementById("competitor").value;
+    bet(competitor);
+}
+
+// web3.eth.defaultAccount = accounts[7];
+// console.log(bet(contract, 500));
