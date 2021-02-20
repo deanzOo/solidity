@@ -191,7 +191,7 @@ const contract_address ='0x78Ff4b8738FF6AFAe8cBf4c5DCcB7C921041C443';
 let accounts = web3.eth.getAccounts();
 let contract;
 
-async function fillDetails() {
+async function getDetails() {
     contract = new web3.eth.Contract(contract_abi, contract_address);
     let n = await contract.methods.n_competitors().call();
     let competitors = [];
@@ -202,51 +202,64 @@ async function fillDetails() {
         scores.push(await contract.methods.Scores(i).call());
         submissions.push(await contract.methods.Submissions(i).call());
     }
-    data = competitors.map((competitor, index) => {
+    return competitors.map((competitor, index) => {
         return {
-            'competitor': competitor,
+            'address': competitor,
             'score': parseInt(scores[index], 16),
             'submissions': parseInt(submissions[index])
         };
     });
+}
+
+async function fillDetails() {
+    data = await getDetails();
 
     var table = document.getElementById("table");
     // console.log('data', data)
     data.forEach((row, index) => {
         var tableRow = table.insertRow(index+1);
-        tableRow.insertCell(0).innerHTML = row.competitor;
+        tableRow.insertCell(0).innerHTML = row.address;
         tableRow.insertCell(1).innerHTML = row.score;
         tableRow.insertCell(2).innerHTML = row.submissions;
         tableRow.insertCell(3).innerHTML = `<button onclick='bet(` + JSON.stringify(row).competitor + `)'>bet</button>`;
     });
 }
 
-async function expire(contract) {
-    await contract.methods.expire().call();
+async function expire() {
+    contract = new web3.eth.Contract(contract_abi, contract_address);
+    await contract.methods.expire().send({from: "0x8b93Feb02a63D41a71C2e231b240b34eE39b076B"});
 }
 
-async function hasExpired(contract) {
+async function hasExpired() {
     let has = false;
     res = await contract.methods.expired().call();
     return res;
 }
 
-async function getWinner(contract) {
+async function getWinner() {
     let winner = '0x0';
-    winner = await contract.methods.getWinner().call();
-    return winner;
+    var data = await getDetails();
+    var scores = data.map(competitor => competitor.score);
+    var maxScore = Math.max(...scores);
+    winner = data.find(competitor => competitor.score == maxScore);
+    alert('Winners address: ' + winner.address + "\nWinners score: " + winner.score + "\nWinners submissions: "+ winner.submissions);
 }
 
 function bet(competitor) {
     contract = new web3.eth.Contract(contract_abi, contract_address);
-    contract.options.from = competitor;
     var _bet = prompt('enter number');
-    contract.methods.bet(_bet).send()
+    contract.methods.bet(_bet).send({from: competitor, gas: 1000000}).then(() => {
+        location.reload();
+        return false;
+    })
 }
 
 function newBet() {
-    var competitor = document.getElementById("competitor").value;
-    bet(competitor);
+    if (!hasExpired()) {
+        var competitor = document.getElementById("competitor").value;
+        bet(competitor);
+    } else
+        alert("Competition is over");
 }
 
 // web3.eth.defaultAccount = accounts[7];
