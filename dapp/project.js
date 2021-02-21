@@ -187,7 +187,7 @@ const contract_abi = [
         "type": "function"
     }
 ];
-const contract_address ='0x78Ff4b8738FF6AFAe8cBf4c5DCcB7C921041C443';
+const contract_address ='0x64324Cf6a6fB405a4Fa898EAcd55DC6e1133CC40';
 let accounts = web3.eth.getAccounts();
 let contract;
 
@@ -255,11 +255,17 @@ function bet(competitor) {
 }
 
 function newBet() {
-    if (!hasExpired()) {
-        var competitor = document.getElementById("competitor").value;
-        bet(competitor);
-    } else
-        alert("Competition is over");
+    hasExpired().then(value => {
+        if (!value) {
+            var competitor = document.getElementById("competitor").value;
+            bet(competitor);
+        } else {
+            console.log(value);
+            alert("Competition is over");
+        }
+
+
+    });
 }
 
 // web3.eth.defaultAccount = accounts[7];
